@@ -56,11 +56,11 @@ return {
     var roots = elementUtilities.getTopMostNodes(nodes);
     for (var i = 0; i < roots.length; i++) {
       var root = roots[i];
-      
+
       // Collapse the nodes in bottom up order
       this.collapseBottomUp(root);
     }
-    
+
     return nodes;
   },
   /*
@@ -105,7 +105,7 @@ return {
           cy.scratch('_cyExpandCollapse').selectableChanged = false;
         }
       }, 0);
-      
+
     });
   },
   /*
@@ -139,13 +139,13 @@ return {
   expandGivenNodes: function (nodes, options) {
     // If there is just one node to expand we need to animate for fisheye view, but if there are more then one node we do not
     if (nodes.length === 1) {
-      
+
       var node = nodes[0];
       if (node._private.data.collapsedChildren != null) {
         // Expand the given node the third parameter indicates that the node is simple which ensures that fisheye parameter will be considered
         this.expandNode(node, options.fisheye, true, options.animate, options.layoutBy, options.animationDuration);
       }
-    } 
+    }
     else {
       // First expand given nodes and then perform layout according to the layoutBy parameter
       this.simpleExpandGivenNodes(nodes, options.fisheye);
@@ -160,9 +160,9 @@ return {
   //collapse the given nodes then perform end operation
   collapseGivenNodes: function (nodes, options) {
     /*
-     * In collapse operation there is no fisheye view to be applied so there is no animation to be destroyed here. We can do this 
+     * In collapse operation there is no fisheye view to be applied so there is no animation to be destroyed here. We can do this
      * in a batch.
-     */ 
+     */
     cy.startBatch();
     this.simpleCollapseGivenNodes(nodes/*, options*/);
     cy.endBatch();
@@ -171,7 +171,9 @@ return {
     this.endOperation(options.layoutBy, nodes);
 
     // Update the style
-    cy.style().update();
+    if (cy.style()) {
+      cy.style().update();
+    }
 
     /*
      * return the nodes to undo the operation
@@ -220,25 +222,25 @@ return {
   },
   /*
    * This method expands the given node. It considers applyFishEyeView, animate and layoutBy parameters.
-   * It also considers single parameter which indicates if this node is expanded alone. If this parameter is truthy along with 
+   * It also considers single parameter which indicates if this node is expanded alone. If this parameter is truthy along with
    * applyFishEyeView parameter then the state of view port is to be changed to have extra space on the screen (if needed) before appliying the
    * fisheye view.
    */
   expandNode: function (node, applyFishEyeView, single, animate, layoutBy, animationDuration) {
     var self = this;
-    
+
     var commonExpandOperation = function (node, applyFishEyeView, single, animate, layoutBy, animationDuration) {
       if (applyFishEyeView) {
 
         node._private.data['width-before-fisheye'] = node._private.data['size-before-collapse'].w;
         node._private.data['height-before-fisheye'] = node._private.data['size-before-collapse'].h;
-        
+
         // Fisheye view expand the node.
         // The first paramter indicates the node to apply fisheye view, the third parameter indicates the node
         // to be expanded after fisheye view is applied.
         self.fishEyeViewExpandGivenNode(node, single, node, animate, layoutBy, animationDuration);
       }
-      
+
       // If one of these parameters is truthy it means that expandNodeBaseFunction is already to be called.
       // However if none of them is truthy we need to call it here.
       if (!single || !applyFishEyeView || !animate) {
@@ -249,8 +251,8 @@ return {
     if (node._private.data.collapsedChildren != null) {
       this.storeWidthHeight(node);
       var animating = false; // Variable to check if there is a current animation, if there is commonExpandOperation will be called after animation
-      
-      // If the node is the only node to expand and fisheye view should be applied, then change the state of viewport 
+
+      // If the node is the only node to expand and fisheye view should be applied, then change the state of viewport
       // to create more space on screen (If needed)
       if (applyFishEyeView && single) {
         var topLeftPosition = this.convertToModelPosition({x: 0, y: 0});
@@ -271,7 +273,7 @@ return {
         };
 
         var unionBB = boundingBoxUtilities.getUnion(nodeBB, bb);
-        
+
         // If these bboxes are not equal then we need to change the viewport state (by pan and zoom)
         if (!boundingBoxUtilities.equalBoundingBoxes(unionBB, bb)) {
           var viewPort = cy.getFitViewport(unionBB, 10);
@@ -295,12 +297,12 @@ return {
           }
         }
       }
-      
+
       // If animating is not true we need to call commonExpandOperation here
       if (!animating) {
         commonExpandOperation(node, applyFishEyeView, single, animate, layoutBy, animationDuration);
       }
-      
+
       //return the node to undo the operation
       return node;
     }
@@ -324,13 +326,13 @@ return {
       children.connectedEdges().unselect();
 
       node.trigger("expandcollapse.beforecollapse");
-      
+
       this.barrowEdgesOfcollapsedChildren(node);
       this.removeChildren(node, node);
       node.addClass('cy-expand-collapse-collapsed-node');
 
       node.trigger("expandcollapse.aftercollapse");
-      
+
       node.position(node.data('position-before-collapse'));
 
       //return the node to undo the operation
@@ -351,7 +353,7 @@ return {
 
   },
   /*
-   * Apply fisheye view to the given node. nodeToExpand will be expanded after the operation. 
+   * Apply fisheye view to the given node. nodeToExpand will be expanded after the operation.
    * The other parameter are to be passed by parameters directly in internal function calls.
    */
   fishEyeViewExpandGivenNode: function (node, single, nodeToExpand, animate, layoutBy, animationDuration) {
@@ -443,7 +445,7 @@ return {
       if (y_a > y_b) {
         T_y = -1 * T_y;
       }
-      
+
       // Move the sibling in the special way
       this.fishEyeViewMoveNode(sibling, T_x, T_y, nodeToExpand, single, animate, layoutBy, animationDuration);
     }
@@ -482,7 +484,7 @@ return {
        childrenList = node.children(":visible");
     }
     var self = this;
-    
+
     /*
      * If the node is simple move itself directly else move it by moving its children by a self recursive call
      */
@@ -502,7 +504,7 @@ return {
 
               return;
             }
-            
+
             // If all nodes are moved we are ready to expand so call expand node base function
             self.expandNodeBaseFunction(nodeToExpand, single, layoutBy);
 
@@ -582,31 +584,31 @@ return {
   barrowEdgesOfcollapsedChildren: function(node) {
     var relatedNodes = node.descendants();
     var edges = relatedNodes.edgesWith(cy.nodes().not(relatedNodes.union(node)));
-    
+
     var relatedNodeMap = {};
-    
+
     relatedNodes.each(function(ele, i) {
       if(typeof ele === "number") {
         ele = i;
       }
       relatedNodeMap[ele.id()] = true;
     });
-    
+
     for (var i = 0; i < edges.length; i++) {
       var edge = edges[i];
       var source = edge.source();
       var target = edge.target();
-      
+
       if (!this.isMetaEdge(edge)) { // is original
         var originalEndsData = {
           source: source,
           target: target
         };
-        
+
         edge.addClass("cy-expand-collapse-meta-edge");
         edge.data('originalEnds', originalEndsData);
       }
-      
+
       edge.move({
         target: !relatedNodeMap[target.id()] ? target.id() : node.id(),
         source: !relatedNodeMap[source.id()] ? source.id() : node.id()
@@ -617,23 +619,23 @@ return {
     var current = node;
     var parentData = cy.scratch('_cyExpandCollapse').parentData;
     var parent = parentData[current.id()];
-    
+
     while( !current.inside() ) {
       current = parent;
       parent = parentData[parent.id()];
     }
-    
+
     return current;
   },
   repairEdges: function(node) {
     var connectedMetaEdges = node.connectedEdges('.cy-expand-collapse-meta-edge');
-    
+
     for (var i = 0; i < connectedMetaEdges.length; i++) {
       var edge = connectedMetaEdges[i];
       var originalEnds = edge.data('originalEnds');
       var currentSrcId = edge.data('source');
       var currentTgtId = edge.data('target');
-      
+
       if ( currentSrcId === node.id() ) {
         edge = edge.move({
           source: this.findNewEnd(originalEnds.source).id()
@@ -643,7 +645,7 @@ return {
           target: this.findNewEnd(originalEnds.target).id()
         });
       }
-      
+
       if ( edge.data('source') === originalEnds.source.id() && edge.data('target') === originalEnds.target.id() ) {
         edge.removeClass('cy-expand-collapse-meta-edge');
         edge.removeData('originalEnds');
